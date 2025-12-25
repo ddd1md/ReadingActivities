@@ -1,0 +1,67 @@
+@startuml
+package "UI Layer (Jetpack Compose)" {
+    [MainActivity] <<Activity>>
+    [BooksScreen] <<Composable>>
+    [GoalsScreen] <<Composable>>
+    [NotesScreen] <<Composable>>
+    [StatsScreen] <<Composable>>
+    [BookDetailScreen] <<Composable>>
+    [MetricsScreen] <<Composable>>
+    [AppRatingOverlay] <<Composable>>
+}
+
+package "Logic Layer (MVVM)" {
+    [ReadingViewModel] <<ViewModel>>
+}
+
+package "Data Layer (Room Database)" {
+    interface "ReadingDao" <<DAO>>
+    database "reading_database" {
+        [BookEntity]
+        [GoalEntity]
+        [NoteEntity]
+        [DailyStatEntity]
+        [AppRatingEntity]
+        [AppSettingsEntity]
+    }
+}
+
+package "Domain Model" {
+    [Book]
+    [Goal]
+    [Note]
+    [DailyStat]
+}
+
+' Relationships
+[MainActivity] ..> [BooksScreen] : contains
+[MainActivity] ..> [GoalsScreen] : contains
+[MainActivity] ..> [NotesScreen] : contains
+[MainActivity] ..> [StatsScreen] : contains
+
+[BooksScreen] --> [ReadingViewModel] : calls/observes
+[GoalsScreen] --> [ReadingViewModel] : calls/observes
+[NotesScreen] --> [ReadingViewModel] : calls/observes
+[StatsScreen] --> [ReadingViewModel] : calls/observes
+[BookDetailScreen] --> [ReadingViewModel] : calls/observes
+[MetricsScreen] --> [ReadingViewModel] : observes
+
+[ReadingViewModel] --> ReadingDao : interacts
+ReadingDao ..> [BookEntity] : persists
+ReadingDao ..> [GoalEntity] : persists
+ReadingDao ..> [NoteEntity] : persists
+
+[ReadingViewModel] ..> [Book] : maps entities to
+[ReadingViewModel] ..> [Goal] : maps entities to
+[ReadingViewModel] ..> [Note] : maps entities to
+
+note right of [ReadingViewModel]
+  Manages UI State using StateFlow
+  Handles business logic & data mapping
+end note
+
+note bottom of [Data Layer (Room Database)]
+  Local persistent storage
+end note
+
+@enduml
