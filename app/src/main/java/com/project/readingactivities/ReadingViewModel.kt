@@ -5,7 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.Date
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ReadingViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getDatabase(application).readingDao()
@@ -32,6 +33,10 @@ class ReadingViewModel(application: Application) : AndroidViewModel(application)
     val appRating: StateFlow<AppRatingEntity?> = dao.getAppRating()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
+    private fun getCurrentDayName(): String {
+        return SimpleDateFormat("EEE", Locale.ENGLISH).format(Date())
+    }
+
     fun addBook(title: String, author: String, totalPages: Int) {
         viewModelScope.launch {
             dao.insertBook(BookEntity(java.util.UUID.randomUUID().toString(), title, author, totalPages, 0, false, null, null, null))
@@ -48,7 +53,7 @@ class ReadingViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun updateDailyProgress(addedPages: Int) {
-        val today = "Fri" // Fixed for demo
+        val today = getCurrentDayName()
         val currentPages = weeklyStats.value.find { it.day == today }?.pages ?: 0
         dao.insertStat(DailyStatEntity(today, currentPages + addedPages))
     }
@@ -102,15 +107,18 @@ class ReadingViewModel(application: Application) : AndroidViewModel(application)
 
     val readingStreak: Int
         get() {
+            val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            val today = getCurrentDayName()
+            val todayIdx = days.indexOf(today).coerceAtLeast(0)
+            
             var streak = 0
-            for (i in 4 downTo 0) {
+            for (i in todayIdx downTo 0) {
                 if (weeklyStats.value[i].pages > 0) streak++ else break
             }
             return streak
         }
 }
 
-// Extension helpers
 fun BookEntity.toDomain() = Book(id, title, author, totalPages, readPages, isFinished, rating, review, finishedDate)
 fun Book.toEntity() = BookEntity(id, title, author, totalPages, readPages, isFinished, rating, review, finishedDate)
 fun GoalEntity.toDomain() = Goal(id, description, isCompleted, completionDate)
